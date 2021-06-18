@@ -20,7 +20,8 @@ class Node:
         h = "1" if self.final else "0"
         h += k
         if self.child:
-            h += ''.join(sorted(self.child.keys()))
+            for k, v in self.child.items():
+                h += (k + str(v.key_id) + str(self.edge[k]))
         return h
 
 
@@ -214,8 +215,8 @@ def mini_tree(mini_arr):
 
 if __name__ == '__main__':
     builder = Builder()
-    s_list = sorted(['abcd', 'bbcd', 'bfce', 'bgce', 'bgcf', "bcd"])
-    key_id = [20, 10, 5, 2, 1, 7]
+    s_list = sorted(['abcd', 'bbcd', 'bfce', 'bgce', 'bgcf', "bcd", 'cgce', 'cgcf', 'fecf', 'gggg'])
+    key_id = [20, 10, 5, 2, 1, 7, 2, 1, 2, 10]
     for word, v in enumerate(s_list):
         builder[v] = key_id[word]
     print(builder)
