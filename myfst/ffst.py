@@ -21,14 +21,14 @@ class Node:
         h += k
         if self.child:
             for k, v in self.child.items():
+                # 添加子节点的路径
                 h += (k + str(v.key_id) + str(self.edge[k]))
         return h
 
 
 @dataclass
 class FST:
-    root = None
-    mini = []
+    root: Node = None
 
     def help_str(self, node, t=0):
         for i, v in node.child.items():
@@ -126,10 +126,11 @@ class Builder(FST):
             else:
                 # 哈希池增加新节点
                 self.hash_pool[h] = v
+            print(h)
             # 寻找完公共后缀后，冻结节点
             v.freeze = True
 
-    def mini_list_dfs(self, node):
+    def mini_list_dfs(self, node, mini):
         """序列化(深度优先)"""
 
         if not node.encoded:
@@ -143,15 +144,35 @@ class Builder(FST):
                 # 一个节点可以序列为 ['b', 9, 2, 0, 0]
                 # 分别表示 [路径的key，路径的值，节点的唯一id，是否为结束状态，是否为上一个节点的最后一个子节点]
                 data = [k, node.edge[k], v.key_id, v.final, last_edge]
-                self.mini.append(data)
+                mini.append(data)
                 # 标识当前子节点以及被序列化过，后续不重复序列化
                 node.encoded = 1
                 # 递归序列化
-                self.mini_list_dfs(v)
+                self.mini_list_dfs(v, mini)
+        return mini
 
     def mini_list(self):
-        self.mini_list_dfs(self.root)
-        return self.mini
+        return self.mini_list_dfs(self.root, [])
+
+    def to_doc(self):
+        import graphviz
+        dot = graphviz.Digraph(comment='The Round Table')
+        dot.node('0', 'root')
+        self.to_doc_help(self.root, dot, set())
+        print(dot.source)
+        dot.render('fst.gv', view=True, format='png')
+
+    def to_doc_help(self, node, dot, id_set):
+        if node.key_id in id_set:
+            return
+        if node.child:
+            for k, v in node.child.items():
+                str_id = str(v.key_id)
+                dot.node(str_id, str_id)
+                dot.edge(str(node.key_id), str_id, f'{k}/{node.edge[k]}')
+                id_set.add(node.key_id)
+                self.to_doc_help(v, dot, id_set)
+
 
     def to_file(self):
         with open('mini.txt', 'w+', encoding='utf8') as f:
@@ -219,10 +240,11 @@ if __name__ == '__main__':
     key_id = [20, 10, 5, 2, 1, 7, 2, 1, 2, 10]
     for word, v in enumerate(s_list):
         builder[v] = key_id[word]
+    # builder.to_doc()
     print(builder)
-    print(builder['bfce'])
-    print('bgcf' in builder)
-    mini_list = list(builder.mini_list())
-    for e, i in enumerate(mini_list):
-        print(e, i)
-    m = mini_tree(mini_list)
+    # print(builder['bfce'])
+    # print('bgcf' in builder)
+    # mini_list = list(builder.mini_list())
+    # for e, i in enumerate(mini_list):
+    #     print(e, i)
+    # m = mini_tree(mini_list)
