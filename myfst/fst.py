@@ -18,17 +18,15 @@ class Node:
         :return:
         """
         h = "1" if self.final else "0"
-        # h += k
+        h += k
         if self.child:
-            for c_k, c_v in self.child.items():
-                # 添加子节点的路径
-                h += (c_k + str(c_v.key_id) + str(self.edge[c_k]))
+            h += ''.join(sorted(self.child.keys()))
         return h
 
 
 @dataclass
 class FST:
-    root: Node = None
+    root = None
 
     def help_str(self, node, t=0):
         for i, v in node.child.items():
@@ -73,11 +71,7 @@ class Builder(FST):
     next: int = 0
     hash_pool: dict = field(default_factory=dict)
 
-
     def __setitem__(self, word, val=0):
-        return self.add(word, val)
-
-    def add(self, word, val=0):
         cur = self.root
         last_state = None
         for w in word:
@@ -113,9 +107,6 @@ class Builder(FST):
         # fst 单词数量 + 1
         self.size += 1
 
-    def finish(self):
-        self.replace(self.root)
-
     def replace(self, last_state: Node):
         # 寻找公共后缀
         for k, v in last_state.child.items():
@@ -133,11 +124,10 @@ class Builder(FST):
             else:
                 # 哈希池增加新节点
                 self.hash_pool[h] = v
-            # print(h)
             # 寻找完公共后缀后，冻结节点
             v.freeze = True
 
-    def mini_list_dfs(self, node, mini):
+    def mini_list_dfs(self, node):
         """序列化(深度优先)"""
 
         if not node.encoded:
@@ -151,38 +141,15 @@ class Builder(FST):
                 # 一个节点可以序列为 ['b', 9, 2, 0, 0]
                 # 分别表示 [路径的key，路径的值，节点的唯一id，是否为结束状态，是否为上一个节点的最后一个子节点]
                 data = [k, node.edge[k], v.key_id, v.final, last_edge]
-                mini.append(data)
+                self.mini.append(data)
                 # 标识当前子节点以及被序列化过，后续不重复序列化
                 node.encoded = 1
                 # 递归序列化
-                self.mini_list_dfs(v, mini)
-        return mini
+                self.mini_list_dfs(v)
 
     def mini_list(self):
-        return self.mini_list_dfs(self.root, [])
-
-    def to_doc(self):
-        import graphviz
-        dot = graphviz.Digraph(comment='FST')
-        dot.attr(rankdir='LR', size='8,5')
-        dot.node('0', 'root')
-        self.to_doc_help(self.root, dot, set())
-        print(dot.source)
-        dot.render('fst.gv', view=True, format='png')
-
-    def to_doc_help(self, node, dot, id_set):
-        if node.key_id in id_set:
-            return
-        if node.child:
-            for k, v in node.child.items():
-                str_id = str(v.key_id)
-                shape = 'circle' if v.final != 1 else 'doublecircle'
-                color = 'black' if v.freeze != 1 else 'blue'
-                dot.node(str_id, str_id, shape=shape, color=color)
-                dot.edge(str(node.key_id), str_id, f'{k}/{node.edge[k]}', color=color)
-                id_set.add(node.key_id)
-                self.to_doc_help(v, dot, id_set)
-
+        self.mini_list_dfs(self.root)
+        return self.mini
 
     def to_file(self):
         with open('mini.txt', 'w+', encoding='utf8') as f:
@@ -246,18 +213,14 @@ def mini_tree(mini_arr):
 
 if __name__ == '__main__':
     builder = Builder()
-    # s_list = sorted(['abcd', 'bbcd', 'bfce', 'bgce', 'bgcf', "bcd", 'cgce', 'cgcf', 'fecf', 'gggg'])
-    # key_id = [20, 10, 5, 2, 1, 7, 2, 1, 2, 10]
-    s_list = sorted(['mon', 'thurs', 'tues', 'tye', 'mo'])
-    key_id = [2, 5, 3, 99, 2]
+    s_list = sorted(['abcd', 'bbcd', 'bfce', 'bgce', 'bgcf', "bcd"])
+    key_id = [20, 10, 5, 2, 1, 7]
     for word, v in enumerate(s_list):
         builder[v] = key_id[word]
-    # builder.finish()
-    builder.to_doc()
     print(builder)
-    # print(builder['bfce'])
-    # print('bgcf' in builder)
-    # mini_list = list(builder.mini_list())
-    # for e, i in enumerate(mini_list):
-    #     print(e, i)
-    # m = mini_tree(mini_list)
+    print(builder['bfce'])
+    print('bgcf' in builder)
+    mini_list = list(builder.mini_list())
+    for e, i in enumerate(mini_list):
+        print(e, i)
+    m = mini_tree(mini_list)
