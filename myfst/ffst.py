@@ -115,6 +115,7 @@ class Builder(FST):
 
     def finish(self):
         self.replace(self.root)
+        self.root.freeze = 1
 
     def replace(self, last_state: Node):
         # 寻找公共后缀
@@ -161,13 +162,21 @@ class Builder(FST):
     def mini_list(self):
         return self.mini_list_dfs(self.root, [])
 
+    def get_node_color(self, node):
+        return 'black' if not node.freeze else 'blue'
+
+    def get_edge_color_style(self, node, child_node):
+        if node.freeze and child_node.freeze:
+            return 'blue', 'solid'
+        else:
+            return 'black', 'dashed'
+
     def to_doc(self):
         import graphviz
         dot = graphviz.Digraph(comment='FST')
         dot.attr(rankdir='LR', size='8,5')
-        dot.node('0', 'root')
+        dot.node('0', 'root', color=self.get_node_color(self.root))
         self.to_doc_help(self.root, dot, set())
-        print(dot.source)
         dot.render('fst.gv', view=True, format='png')
 
     def to_doc_help(self, node, dot, id_set):
@@ -176,10 +185,10 @@ class Builder(FST):
         if node.child:
             for k, v in node.child.items():
                 str_id = str(v.key_id)
-                shape = 'circle' if v.final != 1 else 'doublecircle'
-                color = 'black' if v.freeze != 1 else 'blue'
-                dot.node(str_id, str_id, shape=shape, color=color)
-                dot.edge(str(node.key_id), str_id, f'{k}/{node.edge[k]}', color=color)
+                shape = 'circle' if not v.final else 'doublecircle'
+                dot.node(str_id, str_id, shape=shape, color=self.get_node_color(v))
+                edge_color, edge_style = self.get_edge_color_style(node, v)
+                dot.edge(str(node.key_id), str_id, f'{k}/{node.edge[k]}', color=edge_color, style=edge_style)
                 id_set.add(node.key_id)
                 self.to_doc_help(v, dot, id_set)
 
