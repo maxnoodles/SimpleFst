@@ -319,7 +319,7 @@ GET test/_mapping		// 如果没有在创建Index 指定 mapping, es 会通过类
 
 
 
-![img](https://pic2.zhimg.com/80/v2-867eb60a0811c263a2993e554a21c469_720w.png)
+![FSA construction, step 1](https://blog.burntsushi.net/images/transducers/dot/days3-fsa-1.png)
 
 
 
