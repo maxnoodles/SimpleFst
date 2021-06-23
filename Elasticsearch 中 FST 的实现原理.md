@@ -1,6 +1,10 @@
 ## Elasticsearch 中 FST 的实现原理
 
-​		在3月初的时候，接到一个重构 ES 部分数据的需求，于是我开始学习了解这个 **分布式全文搜索引擎**，其中对 Lucene 中 term index 使用的数据结构 FST 比较感兴趣，在学习原理后，使用 Python 实现了一个简易版的 FST 		本文从第4节的内容主要翻译自 [Index 1,600,000,000 Keys with Automata and Rust](https://blog.burntsushi.net/transducers/) ，并做了一些内容上的调整，原文写得非常非常好，看完本文强烈推荐也看一下原文。
+​		在3月初的时候，接到一个重构 ES 部分数据的需求，于是我开始学习了解这个 **分布式全文搜索引擎**，其中对 Lucene 中 term index 使用的数据结构 FST 比较感兴趣，在学习原理后，使用 Python 实现了一个简易版的 FST
+
+​		本文从第4节的内容主要翻译自 [Index 1,600,000,000 Keys with Automata and Rust](https://blog.burntsushi.net/transducers/) ，并做了一些内容上的调整，原文写得非常非常好，看完本文强烈推荐也看一下原文。
+
+​			文章有一些标题党的行为，其实 FST 是 Lucene 中的概念。但是直接说 Lucene 中的 FST ，可能很多人会没有兴趣。
 
 #### 第一节  简单介绍 Elasticsearch
 
