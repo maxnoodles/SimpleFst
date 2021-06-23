@@ -1,7 +1,7 @@
 # SimpleFst
 Python 实现的简易版 FST
 
-代码运行要求： Python >= 3.8 l
+代码运行要求： Python >= 3.8
 
 或者可以去掉文章中的赋值表达式 := ，则可以使用 Python 3.6 运行代码
 
