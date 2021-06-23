@@ -4,13 +4,13 @@
 
 ​		本文从第4节的内容主要翻译自 [Index 1,600,000,000 Keys with Automata and Rust](https://blog.burntsushi.net/transducers/) ，并做了一些内容上的调整，原文写得非常非常好，看完本文强烈推荐也看一下原文。
 
-​			文章有一些标题党的行为，其实 FST 是 Lucene 中的概念。但是直接说 Lucene 中的 FST ，可能很多人会没有兴趣。
+​		文章有一些标题党的行为，其实 FST 是 Lucene 中的概念。但是直接说 Lucene 中的 FST ，可能很多人会没有兴趣。
 
 #### 第一节  简单介绍 Elasticsearch
 
 > Elasticsearch 是一个开源的搜索引擎，建立在一个全文搜索引擎库 [Apache Lucene™](https://lucene.apache.org/core/) 基础之上。 Lucene 可以说是当下最先进、高性能、全功能的搜索引擎库—无论是开源还是私有。 
 >
-> 但是 Lucene 仅仅只是一个库，且 Lucene *非常* 复杂。
+> 但是 Lucene 仅仅只是一个 java 库，且 Lucene *非常* 复杂。
 >
 > Elasticsearch 内部使用 Lucene 做索引与搜索，通过隐藏 Lucene 的复杂性，取而代之的提供一套简单一致的 RESTful API。
 >
@@ -28,7 +28,7 @@
 
 ​		
 
-下面介绍一些基本概念，文档，索引，分片，字段
+下面介绍一些 ES 的基本概念，文档，索引，分片，字段
 
   ```json
 // 插入一个文档，索引名为 test, 类型为 _doc, 唯一ID为1
@@ -98,7 +98,7 @@ GET test/_mapping		// 如果没有在创建Index 指定 mapping, es 会通过类
 
 ##### 1. 数据是如何被搜索到的
 
-​		 在传统数据库中，每个字段都只存储单个值，搜索都是建立在某个字段某个值上（尽管有模糊搜索之类的东西，但是也是拿出某个值来匹配）。 而全文检索要求的是，每个单词都能被索引，也就是一个字段可以被多个值所有。例如  ｛"text": "aaa  bbb  ccc"｝，使用 aaa 或 bbb 或ccc 都能索引到 text 这个字段。
+​		 在传统数据库中，每个字段都只存储单个值，搜索都是建立在某个字段某个值上（尽管有模糊搜索之类的东西，但是也是拿出某个值来匹配）。 而全文检索要求的是，每个单词都能被索引，也就是一个字段可以被多个值索引。例如  ｛"text": "aaa  bbb  ccc"｝，使用 aaa 或 bbb 或ccc 都能索引到 text 这个字段。
 
 > 对 一个字段多个值 支持的数据结构就是 **倒排索引** 了
 >
@@ -213,7 +213,7 @@ GET test/_mapping		// 如果没有在创建Index 指定 mapping, es 会通过类
 ​		但是磁盘的随机读操作仍然是非常昂贵的（一次 random access 大概需要 10ms 的时间）。所以为了尽量少的读磁盘，可以把一些数据缓存到 内存里。但是整个 term dictionary 本身又太大了，无法完整地放到内存里。于是就有了 term index。它相当于一个字典，输入 term，得到 term dictionary 的位置，再获取倒排数组 。从
 
 ​		从 lucene4开始，为了方便实现前缀，后缀等复杂的查询语句，lucene使用 FST 数据结构来实现 term index。由于使用 FST 实现的 term index 非常小，可以常驻在内存中，这让搜索变得非常快。
-![img](https://pic3.zhimg.com/80/v2-926c47383573f70da40475d2ae2777ce_720w.jpg)		上面这张图就表示 lucene 索引的过程，先从 term index 中获取 term dict 磁盘中的地址，然后取出 term dict地址内容中的 Posting list (倒排索引)。
+![img](https://pic3.zhimg.com/80/v2-926c47383573f70da40475d2ae2777ce_720w.jpg)		上面这张图就表示 lucene 索引的过程，先从 term index 中获取  term dictionary 磁盘中的地址，然后取出  term dictionary 地址内容中的 Posting list  (倒排索引) 指针。
 
 ​		最后，lucene 为了高效搜索使用非常多的数据结构和算法，包括不限于下：
 
@@ -242,7 +242,7 @@ GET test/_mapping		// 如果没有在创建Index 指定 mapping, es 会通过类
 - 安静下来
 - 消化食物
 
-如果把这些输入应用到上面的状态机，那么 **猫咪** 的将依次进入以下状态: 睡觉、吃东西、躲起来、吃东西、在垃圾箱中。因此，如果**猫咪**观察到食物端上来，接着是一声巨响，接着安静下来，最后是 Cauchy 在消化食物，那么我们可以得出结论，**猫咪**此时在猫厕里。
+如果把这些输入应用到上面的状态机，那么 **猫咪** 的将依次进入以下状态: 睡觉、吃东西、躲起来、吃东西、在垃圾箱中。因此，如果**猫咪**观察到食物端上来，接着是一声巨响，接着安静下来，最后是 **猫咪** 在消化食物，那么我们可以得出结论，**猫咪**此时在猫厕里。
 
 
 
@@ -260,9 +260,7 @@ GET test/_mapping		// 如果没有在创建Index 指定 mapping, es 会通过类
 
 ​		 假设有一个键为 jul，FSA 是这样的：
 
-
-
-![img](https://pic3.zhimg.com/80/v2-c553be877c9ec36e5b3fecef62b439ba_720w.png)
+![WechatIMG105.png](https://github.com/maxnoodles/picture_bed/blob/master/img/WechatIMG105.png?raw=true)
 
 ​		第一种情况，如果我们要向 FSA 查询包 **jul** 键，会发生什么情况？ 我们需要按顺序处理字符：
 
@@ -377,7 +375,7 @@ GET test/_mapping		// 如果没有在创建Index 指定 mapping, es 会通过类
 
 ​		但是还有更棘手的是：我们如何在恒定时间内找到**冗余结构**？ 简短的答案是一个**哈希表**，后面我还会再详细说一下实现的细节。
 
-##### FST 构建
+##### 5. FST 构建
 
 ​		**FSA** 能帮我们构建一个集合，但是用来做索引还是有点困难，因为不止需要判断键是否存在，我们还需要知道，如果索引的键存在，它背后的数据是什么。所以我们需要的是一个 **映射表（字典）**，通常有序的**映射表**都是使用**二分搜索树**或 **btree** 实现的，无序的**映射表**使用**散列表**实现。在本节中，我们通过增强 **FSA** 来实现**映射表**。这种增强的 **FSA** 称为  **确定性非循环有限状态转换器(deterministic acyclic finite state transducer 缩写为FST)**。
 
@@ -510,7 +508,7 @@ GET test/_mapping		// 如果没有在创建Index 指定 mapping, es 会通过类
 
 ​		这里还有一个值得一提的成本。用于在内存中表示 **FST** 的格式会导致数据的随机访问。也就是说，查找一个键可能会跳转到 **FST** 的不同区域，这些区域根本不相互靠近。这意味着通过内存映射从磁盘读取 **FST** 消耗的资源可能很昂贵，因为磁盘随机访问 **I/O** 很慢。尤其是非固态磁盘时，因为磁盘随机访问将需要大量物理搜索。如果您发现自己处于这种情况并且操作系统的页面缓存无法补偿，那么您可能需要先花费一点时间将整个 FST 加载到内存中。这并不是一件不可能的事情，因为 FST 的非常小。例如，具有数百万个密钥的 FST 只耗费几兆字节的内存。
 
-##### 8. 相关代码库
+#### 第五节 相关代码库
 
 [SimpleFst](https://github.com/maxnoodles/SimpleFst) 		(笔者根据文章概念使用 Python 编写的简易 FST)
 
@@ -524,7 +522,7 @@ GET test/_mapping		// 如果没有在创建Index 指定 mapping, es 会通过类
 
 [FSTCompiler.java](https://github.com/apache/lucene/blob/d5d6dc079395c47cd6d12dcce3bcfdd2c7d9dc63/lucene/core/src/java/org/apache/lucene/util/fst/FSTCompiler.java)		(Lucene 中 FST 的 java 实现)
 
-##### 9. 引用文献
+#### 引用文献
 
 [Elasticsearch 权威指南](https://www.elastic.co/guide/cn/elasticsearch/guide/current/inside-a-shard.html#inside-a-shard)
 
